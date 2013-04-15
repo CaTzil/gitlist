@@ -47,7 +47,7 @@ class MainController implements ControllerProviderInterface
                 $branch = $repository->getHead();
             }
             $files   = $repository->getFileStatistics($branch);
-            $commits = $repository->getCommitStatistics();
+            $commits = $repository->getCommitStatistics($branch);
 
             $authors = array();
             /* split commit stats in something we can easily access in the

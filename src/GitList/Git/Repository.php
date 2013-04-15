@@ -303,9 +303,9 @@ class Repository extends BaseRepository
         return $searchResults;
     }
 
-    public function getCommitStatistics()
+    public function getCommitStatistics($branch)
     {
-        $logs = $this->getClient()->run($this, 'log --pretty=format:"%an||%ae||%ct" '.$this->getHead());
+        $logs = $this->getClient()->run($this, 'log --pretty=format:"%an||%ae||%ct" '.$branch);
 
         if (empty($logs)) {
             throw new \RuntimeException('No statistics available');
