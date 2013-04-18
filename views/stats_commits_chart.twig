@@ -8,7 +8,7 @@
 			["Month", "Commits"],
             {% for year,months in commits -%}
                 {%- for month in range(1, (year == now.0 ? now.1 : 12)) -%}
-                    [ '{{ "%d/%02d"|format(year, month) }}', {{ attribute(months, month).total | default('0') }} ]{% if ( not loop.parent.loop.last ) or ( not loop.last ) %},{% endif %}
+                    [ '{{ "%02d/%d"|format(month, year) }}', {{ attribute(months, month).total | default('0') }} ]{% if ( not loop.parent.loop.last ) or ( not loop.last ) %},{% endif %}
                 {%- endfor -%}
             {%- endfor %}
             ]);
