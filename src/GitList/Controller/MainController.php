@@ -23,26 +23,22 @@ class MainController implements ControllerProviderInterface
 
 
         $route->get('/refresh', function(Request $request) use ($app ) {
-            $app['git']->deleteCached();
-
             # Go back to calling page
             return $app->redirect($request->headers->get('Referer'));
         })->bind('refresh');
-        
+
         
         $route->post('/ajax/edit-description/{repo}', function(Request $request, $repo) use ($app ) {
             
-            $repository = $app['git']->getRepository($app['git.repos'], $repo);
+            $repository = $app['git']->getRepositoryFromName($app['git.repos'], $repo);
             $repository->saveDescription($request->get('value'));
             
             return '';
         })
         ->assert('repo', $app['util.routing']->getRepositoryRegex());
-
-
-
         $route->get('{repo}/stats/{branch}', function($repo, $branch) use ($app) {
-            $repository = $app['git']->getRepository($app['git.repos'] , $repo);
+            $repository = $app['git']->getRepositoryFromName($app['git.repos'], $repo);
+
             if ($branch === null) {
                 $branch = $repository->getHead();
             }
@@ -80,13 +76,13 @@ class MainController implements ControllerProviderInterface
                 'now'            => array( date('Y'), date('m') ),
                 )
             );
-        })->assert('repo', $app['util.routing']->getRepositoryRegex())        
+        })->assert('repo', $app['util.routing']->getRepositoryRegex())
           ->assert('branch', $app['util.routing']->getBranchRegex())
           ->value('branch', null)
           ->bind('stats');
 
         $route->get('{repo}/{branch}/rss/', function($repo, $branch) use ($app) {
-            $repository = $app['git']->getRepository($app['git.repos'], $repo);
+            $repository = $app['git']->getRepositoryFromName($app['git.repos'], $repo);
 
             if ($branch === null) {
                 $branch = $repository->getHead();
@@ -109,4 +105,3 @@ class MainController implements ControllerProviderInterface
         return $route;
     }
 }
-

@@ -3,6 +3,7 @@
 namespace GitList\Util;
 
 use Silex\Application;
+use GitList\Exception\EmptyRepositoryException;
 
 class Routing
 {
@@ -23,7 +24,7 @@ class Routing
     public function parseCommitishPathParam($commitishPath, $repo)
     {
         $app = $this->app;
-        $repository = $app['git']->getRepository($app['git.repos'], $repo);
+        $repository = $app['git']->getRepositoryFromName($app['git.repos'], $repo);
 
         $commitish = null;
         $path = null;
@@ -40,8 +41,6 @@ class Routing
         }
 
         if ($commitish === null) {
-            // DEBUG Can you have a repo with no branches? How should we handle
-            // that?
             $branches = $repository->getBranches();
 
             $tags = $repository->getTags();
@@ -59,11 +58,11 @@ class Routing
                 }
             }
 
-            $commitish = $matchedBranch;
-        }
+            if ($matchedBranch === null) {
+                throw new EmptyRepositoryException('This repository is currently empty. There are no commits.');
+            }
 
-        if ($commitish === null) {
-            $app->abort(404, "'$branch_path' does not appear to contain a commit-ish for '$repo'.");
+            $commitish = $matchedBranch;
         }
 
         $commitishLength = strlen($commitish);
@@ -71,11 +70,6 @@ class Routing
         if (strpos($path, '/') === 0) {
             $path = substr($path, 1);
         }
-
-        $commitHasPath = $repository->pathExists($commitish, $path);
-        /*if ($commitHasPath !== true) {
-            $app->abort(404, "\"$path\" does not exist in \"$commitish\".");
-        }*/
 
         return array($commitish, $path);
     }
@@ -111,7 +105,7 @@ class Routing
             $self = $this;
             $quotedPaths = array_map(
                function ($repo) use ($app, $self) {
-                    $repoName =  $repo['name'] ;
+                    $repoName = $repo['name'];
                     //Windows
                     if ($self->isWindows()){
                        $repoName = str_replace('\\', '\\\\',$repoName);
@@ -137,12 +131,14 @@ class Routing
 
     public function isWindows()
     {
-      switch(PHP_OS){
-        case  'WIN32':
-        case  'WINNT':
-        case  'Windows': return true;
-        default : return false;
-      }
+        switch (PHP_OS) {
+            case 'WIN32':
+            case 'WINNT':
+            case 'Windows':
+                return true;
+            default:
+                return false;
+        }
     }
 
     /**

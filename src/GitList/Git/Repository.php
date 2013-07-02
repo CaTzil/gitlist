@@ -11,16 +11,6 @@ use DateTime;
 
 class Repository extends BaseRepository
 {
-	/*is this repository is bare or not*/
-	protected $isBare;
-	
-	public function __construct($path, Client $client, $isBare = false)
-	{
-		parent::__construct($path, $client);
-		
-		$this->isBare = $isBare;
-	}
-	
     /**
      * Return true if the repo contains this commit.
      *
@@ -63,11 +53,11 @@ class Repository extends BaseRepository
                 . "<body><![CDATA[%b]]></body>"
                 . "</item>\" $commitHash"
         );
+
         $xmlEnd = strpos($logs, '</item>') + 7;
         $commitInfo = substr($logs, 0, $xmlEnd);
         $commitData = substr($logs, $xmlEnd);
         $logs = explode("\n", $commitData);
-        array_shift($logs);
 
         // Read commit metadata
         $format = new PrettyFormat;
@@ -78,8 +68,6 @@ class Repository extends BaseRepository
         if ($commit->getParentsHash()) {
             $command = 'diff ' . $commitHash . '~1..' . $commitHash;
             $logs = explode("\n", $this->getClient()->run($this, $command));
-        } else {
-            $logs = array_slice($logs, 1);
         }
 
         $commit->setDiffs($this->readDiffLogs($logs));
@@ -137,6 +125,11 @@ class Repository extends BaseRepository
         $lineNumOld = 0;
         $lineNumNew = 0;
         foreach ($logs as $log) {
+            # Skip empty lines
+            if ($log == "") {
+                continue;
+            }
+
             if ('diff' === substr($log, 0, 4)) {
                 if (isset($diff)) {
                     $diffs[] = $diff;
@@ -220,7 +213,7 @@ class Repository extends BaseRepository
         $pager = "--skip=$page --max-count=15";
         $command =
                   "log $pager --pretty=format:\"<item><hash>%H</hash>"
-                . "<short_hash>%h</short_hash><tree>%T</tree><parent>%P</parent>"
+                . "<short_hash>%h</short_hash><tree>%T</tree><parents>%P</parents>"
                 . "<author>%an</author><author_email>%ae</author_email>"
                 . "<date>%at</date><commiter>%cn</commiter>"
                 . "<commiter_email>%ce</commiter_email>"
@@ -251,7 +244,7 @@ class Repository extends BaseRepository
         $query = escapeshellarg($query);
         $command =
               "log --grep={$query} --pretty=format:\"<item><hash>%H</hash>"
-            . "<short_hash>%h</short_hash><tree>%T</tree><parent>%P</parent>"
+            . "<short_hash>%h</short_hash><tree>%T</tree><parents>%P</parents>"
             . "<author>%an</author><author_email>%ae</author_email>"
             . "<date>%at</date><commiter>%cn</commiter>"
             . "<commiter_email>%ce</commiter_email>"
@@ -427,12 +420,10 @@ class Repository extends BaseRepository
     public function saveDescription($desc)
     {
     	$desc = strip_tags($desc);
-    	$path = $this->path.(($this->isBare)? '':DIRECTORY_SEPARATOR.'.git').DIRECTORY_SEPARATOR.'description';
+    	$path = $this->path.DIRECTORY_SEPARATOR.'description';
     	
     	//edit the 'description' file, if not exists, creates one
 		file_put_contents($path, $desc);
-		$this->client->deleteCached();
-
     }
 }
 

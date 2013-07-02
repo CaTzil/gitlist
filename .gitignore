@@ -1,5 +1,4 @@
 cache/
-vendor/
 build/
 *.diff
 *.err
@@ -28,6 +27,8 @@ nbproject
 .CVS
 .idea
 node_modules
+config.ini
 cache.properties
 composer.phar
+phpunit.xml
 *.htpasswd
